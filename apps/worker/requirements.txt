@@ -1,0 +1,8 @@
+# HTTP client for Wildberries API.
+requests==2.32.3
+
+# ClickHouse client used by worker jobs.
+clickhouse-connect==0.8.11
+
+# Robust datetime parsing for WB API date fields.
+python-dateutil==2.9.0.post0

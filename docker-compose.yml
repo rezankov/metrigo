@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   nginx:
     image: nginx:stable
@@ -8,4 +6,56 @@ services:
       - "80:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
+    restart: always
+
+  worker:
+    build:
+      context: ./apps/worker
+    container_name: metrigo_worker
+    env_file:
+      - .env
+    depends_on:
+      - clickhouse
+    restart: "no"
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: metrigo_api
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - clickhouse
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: always
+
+  postgres:
+    image: postgres:16
+    container_name: metrigo_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./db/postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: always
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: metrigo_clickhouse
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes:
+      - ./data/clickhouse:/var/lib/clickhouse
+      - ./db/clickhouse/init:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
     restart: always
