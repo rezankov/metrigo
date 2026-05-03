@@ -1,0 +1,13 @@
+.env
+.env.*
+
+storage/uploads/*
+storage/exports/*
+
+*.log
+__pycache__/
+node_modules/
+dist/
+build/
+.cache/
+.DS_Store
