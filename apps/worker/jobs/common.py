@@ -62,15 +62,9 @@ def ch():
 
 def seller_id() -> str:
     """
-    Return current seller_id.
-
-    Сейчас это временно DEFAULT_SELLER_ID из .env.
-    Позже тут появится multi-tenant логика:
-    Postgres -> active sellers -> token -> job run.
+    Возвращает текущий seller_id (multi-tenant).
     """
-    if not DEFAULT_SELLER_ID:
-        raise RuntimeError("DEFAULT_SELLER_ID is empty")
-    return DEFAULT_SELLER_ID
+    return os.getenv("DEFAULT_SELLER_ID", "main")
 
 
 def md5_hex(s: str) -> str:
@@ -149,66 +143,44 @@ def wb_get_list(url: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
     raise RuntimeError("Too many retries from WB API")
 
 
-def get_watermark(source: str) -> datetime:
+def get_watermark(source: str, seller_id: str) -> datetime:
     """
-    Return current watermark for seller_id + source.
-
-    Watermark нужен для инкрементальной загрузки:
-    - sales/orders грузим от последнего lastChangeDate;
-    - stocks используют watermark как дату последнего snapshot;
-    - finance может обновлять watermark по времени загрузки.
-
-    Если watermark ещё нет, берём последние 2 дня.
-    Это безопасный старт для первой проверки.
-    Для полного бэкфилла позже сделаем отдельный режим.
+    Получение watermark с учетом seller_id
     """
     client = ch()
-    sid = seller_id()
 
     rows = client.query(
         """
         SELECT max(watermark)
         FROM etl_state
-        WHERE seller_id = %(seller_id)s
-          AND source = %(source)s
+        WHERE source = %(s)s AND seller_id = %(sid)s
         """,
-        {"seller_id": sid, "source": source},
+        {"s": source, "sid": seller_id},
     ).result_rows
 
     if not rows or rows[0][0] is None:
         return datetime.now(timezone.utc) - timedelta(days=2)
 
     wm = rows[0][0]
-
     if wm.tzinfo is None:
         wm = wm.replace(tzinfo=timezone.utc)
-
     return wm
 
 
-def set_watermark(source: str, wm: datetime):
+def set_watermark(source: str, wm: datetime, seller_id: str):
     """
-    Save new watermark for seller_id + source.
-
-    Таблица etl_state работает через ReplacingMergeTree(updated_at),
-    поэтому мы вставляем новую строку, а ClickHouse логически оставляет
-    актуальное состояние по ORDER BY (seller_id, source).
+    Сохраняем watermark с учетом seller_id
     """
     client = ch()
-    sid = seller_id()
 
     wm_naive = wm.astimezone(timezone.utc).replace(tzinfo=None)
 
     client.command(
         """
-        INSERT INTO etl_state (seller_id, source, watermark)
-        VALUES (%(seller_id)s, %(source)s, %(watermark)s)
+        INSERT INTO etl_state (source, seller_id, watermark)
+        VALUES (%(s)s, %(sid)s, %(w)s)
         """,
-        {
-            "seller_id": sid,
-            "source": source,
-            "watermark": wm_naive,
-        },
+        {"s": source, "sid": seller_id, "w": wm_naive},
     )
 
 
