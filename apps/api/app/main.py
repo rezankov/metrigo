@@ -1,8 +1,25 @@
+"""
+Main entrypoint FastAPI приложения.
+
+Задачи файла:
+- Создать FastAPI приложение
+- Описать базовые endpoints (health, version)
+- Проверка доступности инфраструктуры (Postgres + ClickHouse)
+
+Важно:
+- Этот файл НЕ содержит бизнес-логики
+- Только инициализация и health-check endpoints
+"""
+
 from fastapi import FastAPI
 
 from app.config import settings
 from app.db import check_postgres, check_clickhouse
 
+
+# ------------------------------------------------------------------------------
+# Создание приложения
+# ------------------------------------------------------------------------------
 
 app = FastAPI(
     title="Metrigo API",
@@ -10,8 +27,19 @@ app = FastAPI(
 )
 
 
+# ------------------------------------------------------------------------------
+# Health endpoints
+# ------------------------------------------------------------------------------
+
 @app.get("/health")
 def health():
+    """
+    Базовая проверка API.
+
+    Используется:
+    - nginx / load balancer
+    - мониторинг
+    """
     return {
         "status": "ok",
         "service": "api",
@@ -20,6 +48,13 @@ def health():
 
 @app.get("/version")
 def version():
+    """
+    Версия приложения.
+
+    Удобно:
+    - при деплое
+    - при отладке
+    """
     return {
         "project": settings.project_name,
         "version": settings.app_version,
@@ -28,6 +63,17 @@ def version():
 
 @app.get("/health/db")
 def health_db():
+    """
+    Проверка доступности баз данных.
+
+    Что проверяем:
+    - Postgres (основные данные, пользователи)
+    - ClickHouse (аналитика)
+
+    Важно:
+    - НЕ делаем сложных запросов
+    - только ping/простые проверки
+    """
     postgres_ok = check_postgres()
     clickhouse_ok = check_clickhouse()
 
@@ -38,9 +84,13 @@ def health_db():
     }
 
 
-@app.get("/sellers")
-def sellers():
-    return {
-        "items": [],
-        "message": "Sellers endpoint placeholder",
-    }
+# ------------------------------------------------------------------------------
+# Future endpoints (заготовка)
+# ------------------------------------------------------------------------------
+
+# Здесь будут:
+# - /auth
+# - /users
+# - /sellers
+# - /reports
+# - /ai
