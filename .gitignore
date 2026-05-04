@@ -11,4 +11,6 @@ dist/
 build/
 .cache/
 .DS_Store
-data/
+
+# certbot (ssl)
+certbot/
