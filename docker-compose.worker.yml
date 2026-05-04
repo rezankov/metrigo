@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+
+  worker_sales:
+    build: ./apps/worker
+    container_name: metrigo_worker_sales
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - metrigo_net
+    command: >
+      sh -lc '
+        echo "[worker_sales] started";
+        while true; do
+          date -u;
+          python main.py sales || true;
+          sleep 300;
+        done
+      '
+
+  worker_orders:
+    build: ./apps/worker
+    container_name: metrigo_worker_orders
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - metrigo_net
+    command: >
+      sh -lc '
+        echo "[worker_orders] started";
+        while true; do
+          date -u;
+          python main.py orders || true;
+          sleep 300;
+        done
+      '
+
+  worker_stocks:
+    build: ./apps/worker
+    container_name: metrigo_worker_stocks
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - metrigo_net
+    command: >
+      sh -lc '
+        echo "[worker_stocks] started";
+        while true; do
+          date -u;
+          python main.py stocks || true;
+          sleep 900;
+        done
+      '
+
+  worker_fin_report:
+    build: ./apps/worker
+    container_name: metrigo_worker_fin
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - metrigo_net
+    command: >
+      sh -lc '
+        echo "[worker_fin_report] started";
+        while true; do
+          date -u;
+          python main.py fin_report || true;
+          sleep 86400;
+        done
+      '
+
+networks:
+  metrigo_net:
+    name: metrigo_default
+    external: true

@@ -1,0 +1,6 @@
+data/
+.env
+certbot/
+__pycache__/
+*.pyc
+*.log
