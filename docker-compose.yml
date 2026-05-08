@@ -53,6 +53,16 @@ services:
       - "127.0.0.1:5432:5432"
     restart: always
 
+  web:
+    build:
+      context: ./apps/web
+    container_name: metrigo_web
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: always
+
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
     container_name: metrigo_clickhouse
