@@ -32,6 +32,8 @@ services:
     container_name: metrigo_worker
     env_file:
       - .env
+    volumes:
+      - ./state:/opt/metrigo/state
     depends_on:
       - clickhouse
       - postgres
