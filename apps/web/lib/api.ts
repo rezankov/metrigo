@@ -23,3 +23,25 @@ export async function getTodaySummary(): Promise<TodaySummary> {
 
   return response.json();
 }
+
+export type ChatResponse = {
+  type: "text";
+  text: string;
+};
+
+export async function sendChatMessage(message: string): Promise<ChatResponse> {
+  const response = await fetch("https://metrigo.ru/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify({ message }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to send chat message");
+  }
+
+  return response.json();
+}

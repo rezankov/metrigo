@@ -1,3 +1,4 @@
+import { ChatHome } from "@/components/ChatHome";
 import { getTodaySummary } from "@/lib/api";
 
 function formatMoney(value: number) {
@@ -15,9 +16,7 @@ export default async function HomePage() {
         <header className="topBar">
           <div>
             <div className="logo">Metrigo</div>
-            <div className="subtitle">
-              AI-кабинет WB-селлера
-            </div>
+            <div className="subtitle">AI-кабинет WB-селлера</div>
           </div>
 
           <div className="status">
@@ -42,33 +41,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="chat">
-          <div className="message ai">
-            <p>{summary.summary_text}</p>
-          </div>
-
-          <div className="message user">
-            <p>Что сегодня важно проверить?</p>
-          </div>
-
-          <div className="message ai">
-            <p>
-              Я бы посмотрел остатки лидеров продаж
-              и эффективность рекламы по SKU.
-            </p>
-          </div>
-        </section>
-
-        <section className="chips">
-          {summary.suggested_actions.map((action) => (
-              <button key={action}>{action}</button>
-))}
-        </section>
-
-        <footer className="inputBar">
-          <input placeholder="Спросите Metrigo…" />
-          <button>↑</button>
-        </footer>
+        <ChatHome summary={summary} />
       </section>
     </main>
   );
