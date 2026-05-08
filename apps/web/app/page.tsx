@@ -1,36 +1,50 @@
-export default function HomePage() {
+import { getTodaySummary } from "@/lib/api";
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export default async function HomePage() {
+  const summary = await getTodaySummary();
+
   return (
     <main className="page">
       <section className="phone">
         <header className="topBar">
           <div>
             <div className="logo">Metrigo</div>
-            <div className="subtitle">AI-кабинет WB-селлера</div>
+            <div className="subtitle">
+              AI-кабинет WB-селлера
+            </div>
           </div>
-          <div className="status">🟢 OK</div>
+
+          <div className="status">
+            {summary.system_status === "ok" ? "🟢 OK" : "🔴 ERROR"}
+          </div>
         </header>
 
         <section className="metrics">
           <div className="metric">
             <span>Продажи</span>
-            <strong>22</strong>
+            <strong>{summary.sales_count}</strong>
           </div>
+
           <div className="metric">
             <span>Выручка</span>
-            <strong>26 430 ₽</strong>
+            <strong>{formatMoney(summary.revenue)} ₽</strong>
           </div>
+
           <div className="metric">
             <span>ДРР</span>
-            <strong>0.64%</strong>
+            <strong>{summary.drr}%</strong>
           </div>
         </section>
 
         <section className="chat">
           <div className="message ai">
-            <p>
-              Доброе утро. Продажи вчера были стабильными: 22 продажи,
-              выручка 26 430 ₽. Реклама работает спокойно, ДРР 0.64%.
-            </p>
+            <p>{summary.summary_text}</p>
           </div>
 
           <div className="message user">
@@ -39,17 +53,16 @@ export default function HomePage() {
 
           <div className="message ai">
             <p>
-              Я бы посмотрел остатки по лидерам продаж и эффективность рекламы
-              по SKU bg-org-8-beige.
+              Я бы посмотрел остатки лидеров продаж
+              и эффективность рекламы по SKU.
             </p>
           </div>
         </section>
 
         <section className="chips">
-          <button>Почему просели продажи?</button>
-          <button>Остатки</button>
-          <button>Реклама</button>
-          <button>Что заказать?</button>
+          {summary.suggested_actions.map((action) => (
+              <button key={action}>{action}</button>
+))}
         </section>
 
         <footer className="inputBar">
