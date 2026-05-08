@@ -1,26 +1,17 @@
 services:
   nginx:
-
     image: nginx:stable
     container_name: metrigo_nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx:/etc/nginx/conf.d
+      - ./nginx/conf.d:/etc/nginx/conf.d
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
-    restart: always
-
-  worker:
-    build:
-      context: ./apps/worker
-    container_name: metrigo_worker
-    env_file:
-      - .env
     depends_on:
-      - clickhouse
-    restart: "no"
+      - api
+    restart: always
 
   api:
     build:
@@ -34,6 +25,17 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     restart: always
+
+  worker:
+    build:
+      context: ./apps/worker
+    container_name: metrigo_worker
+    env_file:
+      - .env
+    depends_on:
+      - clickhouse
+      - postgres
+    restart: "no"
 
   postgres:
     image: postgres:16

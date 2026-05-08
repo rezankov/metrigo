@@ -4,3 +4,6 @@ certbot/
 __pycache__/
 *.pyc
 *.log
+logs/
+locks/
+state/
