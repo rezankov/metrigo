@@ -14,6 +14,11 @@ from fastapi import Request, FastAPI
 from pydantic import BaseModel
 from app.build_today_context import build_today_context
 from app.load_tools import TOOLS, TOOLS_DICT as TOOLS
+from app.chat_store import (
+    get_or_create_thread,
+    save_message,
+    get_last_messages,
+)
 
 # --- Конфиги ---
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -57,12 +62,43 @@ async def chat(request: ChatRequest):
 """
 
     # --- Запрос к OpenRouter (ChatGPT) ---
+    # --- Thread ---
+    thread_id = get_or_create_thread(SELLER_ID)
+
+    # --- Сохраняем сообщение пользователя ---
+    save_message(
+        thread_id=thread_id,
+        seller_id=SELLER_ID,
+        role="user",
+        content=text,
+    )
+
+    # --- Последние сообщения ---
+    history = get_last_messages(
+        thread_id=thread_id,
+        limit=20,
+    )
+
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt,
+        }
+    ]
+
+    # --- История чата ---
+    for msg in history:
+        if msg["role"] in ("user", "assistant"):
+            messages.append(
+                {
+                    "role": msg["role"],
+                    "content": msg["content"],
+                }
+            )
+
     payload = {
         "model": OPENROUTER_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text}
-        ]
+        "messages": messages,
     }
 
     headers = {
@@ -80,6 +116,13 @@ async def chat(request: ChatRequest):
             resp.raise_for_status()
             result = resp.json()
             chat_text = result["choices"][0]["message"]["content"]
+            # --- Сохраняем ответ ИИ ---
+            save_message(
+                thread_id=thread_id,
+                seller_id=SELLER_ID,
+                role="assistant",
+                content=chat_text,
+            )
             return {
                 "type": "text",
                 "text": chat_text,
@@ -108,3 +151,21 @@ async def call_tool(tool_name: str, request: Request):
         return {"error": f"Error calling tool {tool_name}: {e}"}
 
     return {"result": result}
+
+
+@app.get("/chat/history")
+async def chat_history(limit: int = 30):
+    """
+    Получить последние сообщения чата.
+    """
+
+    thread_id = get_or_create_thread(SELLER_ID)
+
+    messages = get_last_messages(
+        thread_id=thread_id,
+        limit=limit,
+    )
+
+    return {
+        "messages": messages
+    }

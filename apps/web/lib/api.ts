@@ -31,3 +31,24 @@ export async function sendChatMessage(message: string): Promise<ChatResponse> {
   if (!response.ok) throw new Error("Failed to send chat message");
   return response.json();
 }
+
+export type ChatHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+export async function getChatHistory(limit = 30): Promise<ChatHistoryMessage[]> {
+  const response = await fetch(`/api/chat/history?limit=${limit}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load chat history");
+  }
+
+  const data = await response.json();
+
+  return data.messages || [];
+}
