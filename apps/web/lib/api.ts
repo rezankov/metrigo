@@ -33,13 +33,25 @@ export async function sendChatMessage(message: string): Promise<ChatResponse> {
 }
 
 export type ChatHistoryMessage = {
+  id: number;
   role: "user" | "assistant";
   content: string;
   created_at: string;
 };
 
-export async function getChatHistory(limit = 30): Promise<ChatHistoryMessage[]> {
-  const response = await fetch(`/api/chat/history?limit=${limit}`, {
+export async function getChatHistory(
+  limit = 30,
+  beforeId?: number,
+): Promise<ChatHistoryMessage[]> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+  });
+
+  if (beforeId) {
+    params.set("before_id", String(beforeId));
+  }
+
+  const response = await fetch(`/api/chat/history?${params.toString()}`, {
     method: "GET",
     cache: "no-store",
   });

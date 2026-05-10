@@ -64,7 +64,11 @@ export default function Page() {
         <header className="fixedHeader">
           <section className="headerTop">
             <div className="brand">
-              <div className="logoStub">M</div>
+              <img
+                src="/logo.svg"
+                alt="Metrigo"
+                className="logoImage"
+              />
 
               <div className="brandText">
                 <div className="logo">Metrigo</div>

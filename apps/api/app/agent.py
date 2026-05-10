@@ -12,6 +12,7 @@ agent.py — AI-agent loop для Metrigo.
 import json
 import httpx
 from app.tool_runner import parse_tool_call, run_tool
+from app.tool_log import save_tool_call
 
 
 async def ask_llm(
@@ -97,6 +98,13 @@ async def run_agent(
     tool_result = run_tool(
         tool_name=tool_call["tool"],
         args=args,
+    )
+
+    save_tool_call(
+        seller_id=seller_id,
+        tool_name=tool_call["tool"],
+        args=args,
+        result=tool_result,
     )
 
     messages.append(

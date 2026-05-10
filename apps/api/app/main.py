@@ -145,9 +145,15 @@ async def call_tool(tool_name: str, request: Request):
 
 
 @app.get("/chat/history")
-async def chat_history(limit: int = 30):
+async def chat_history(
+    limit: int = 30,
+    before_id: int | None = None,
+):
     """
-    Получить последние сообщения чата.
+    Получить сообщения чата.
+
+    По умолчанию — последние limit сообщений.
+    Если before_id указан — сообщения старше before_id.
     """
 
     thread_id = get_or_create_thread(SELLER_ID)
@@ -155,6 +161,7 @@ async def chat_history(limit: int = 30):
     messages = get_last_messages(
         thread_id=thread_id,
         limit=limit,
+        before_id=before_id,
     )
 
     return {

@@ -85,27 +85,46 @@ def save_message(
 def get_last_messages(
     thread_id: int,
     limit: int = 30,
+    before_id: int | None = None,
 ):
     """
     Получить последние сообщения.
+
+    Если before_id указан — получить сообщения старше этого id.
     """
 
     with pg() as conn:
         with conn.cursor() as cur:
-
-            cur.execute(
-                """
-                SELECT role, content, created_at
-                FROM chat_messages
-                WHERE thread_id = %s
-                ORDER BY id DESC
-                LIMIT %s
-                """,
-                (
-                    thread_id,
-                    limit,
-                ),
-            )
+            if before_id:
+                cur.execute(
+                    """
+                    SELECT id, role, content, created_at
+                    FROM chat_messages
+                    WHERE thread_id = %s
+                      AND id < %s
+                    ORDER BY id DESC
+                    LIMIT %s
+                    """,
+                    (
+                        thread_id,
+                        before_id,
+                        limit,
+                    ),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT id, role, content, created_at
+                    FROM chat_messages
+                    WHERE thread_id = %s
+                    ORDER BY id DESC
+                    LIMIT %s
+                    """,
+                    (
+                        thread_id,
+                        limit,
+                    ),
+                )
 
             rows = cur.fetchall()
 
@@ -113,9 +132,10 @@ def get_last_messages(
 
     return [
         {
-            "role": row[0],
-            "content": row[1],
-            "created_at": row[2].isoformat(),
+            "id": row[0],
+            "role": row[1],
+            "content": row[2],
+            "created_at": row[3].isoformat(),
         }
         for row in rows
     ]
