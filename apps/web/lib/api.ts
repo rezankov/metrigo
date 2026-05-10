@@ -8,40 +8,26 @@ export type TodaySummary = {
   system_status: string;
   summary_text: string;
   suggested_actions: string[];
-	priority: "ok" | "normal" | "warning";
+  priority: "ok" | "normal" | "warning";
   risks: string[];
 };
 
-export async function getTodaySummary(): Promise<TodaySummary> {
-  const response = await fetch("https://metrigo.ru/api/summary/today", {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load summary");
-  }
-
-  return response.json();
-}
-
 export type ChatResponse = {
-  type: "text";
+  type: "text" | "chart";
   text: string;
+  chart?: {
+    endpoint: string;
+  };
 };
 
+export async function getTodaySummary(): Promise<TodaySummary> {
+  const response = await fetch("/api/tools/get_summary_today", { cache: "no-store", method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({}) });
+  if (!response.ok) throw new Error("Failed to load summary");
+  return response.json().then(r => r.result);
+}
+
 export async function sendChatMessage(message: string): Promise<ChatResponse> {
-  const response = await fetch("https://metrigo.ru/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-    body: JSON.stringify({ message }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to send chat message");
-  }
-
+  const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
+  if (!response.ok) throw new Error("Failed to send chat message");
   return response.json();
 }

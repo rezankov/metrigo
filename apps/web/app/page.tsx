@@ -1,48 +1,104 @@
-import { ChatHome } from "@/components/ChatHome";
-import { getTodaySummary } from "@/lib/api";
+"use client";
 
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-  }).format(value);
+import { useEffect, useState } from "react";
+import { ChatHome } from "@/components/ChatHome";
+import { getTodaySummary, TodaySummary } from "@/lib/api";
+
+function formatRub(value: number) {
+  return `${Math.round(value).toLocaleString("ru-RU")} ₽`;
 }
 
-export default async function HomePage() {
-  const summary = await getTodaySummary();
+function MiniSalesChart() {
+  const bars = [42, 48, 38, 50, 56, 64, 58, 46, 68, 62, 70, 64, 66, 72, 78];
+
+  return (
+    <section className="miniChartCard">
+      {bars.map((height, index) => (
+        <div
+          key={index}
+          className="miniBar"
+          style={{ height: `${height}%` }}
+        />
+      ))}
+    </section>
+  );
+}
+
+export default function Page() {
+  const [summary, setSummary] = useState<TodaySummary | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    getTodaySummary()
+      .then(setSummary)
+      .catch(() => setError(true));
+  }, []);
+
+  if (error) {
+    return (
+      <main className="page">
+        <div className="phone">
+          <div className="message ai">
+            <p>Ошибка загрузки данных.</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <main className="page">
+        <div className="phone">
+          <div className="message ai">
+            <p>Загрузка Metrigo…</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
-      <section className="phone">
-        <header className="topBar">
-          <div>
-            <div className="logo">Metrigo</div>
-            <div className="subtitle">AI-кабинет WB-селлера</div>
-          </div>
+      <div className="phone">
+        <header className="fixedHeader">
+          <section className="headerTop">
+            <div className="brand">
+              <div className="logoStub">M</div>
 
-          <div className="status">
-            {summary.system_status === "ok" ? "🟢 OK" : "🔴 ERROR"}
-          </div>
+              <div className="brandText">
+                <div className="logo">Metrigo</div>
+                <div className="subtitle">AI-кабинет WB</div>
+              </div>
+            </div>
+
+            <div className="headerMetric">
+              <span>Сегодня</span>
+              <strong>
+                {summary.sales_count} / {summary.orders_count} /{" "}
+                {formatRub(summary.revenue)}
+              </strong>
+            </div>
+
+            <div className="headerMetric green">
+              <span>7 дней</span>
+              <strong>
+                {summary.sales_count} / {summary.orders_count} /{" "}
+                {formatRub(summary.revenue)}
+              </strong>
+            </div>
+
+            <div
+              className="statusDotOnly"
+              title={`Статус системы: ${summary.system_status.toUpperCase()}`}
+            />
+          </section>
+
+          <MiniSalesChart />
         </header>
 
-        <section className="metrics">
-          <div className="metric">
-            <span>Продажи</span>
-            <strong>{summary.sales_count}</strong>
-          </div>
-
-          <div className="metric">
-            <span>Выручка</span>
-            <strong>{formatMoney(summary.revenue)} ₽</strong>
-          </div>
-
-          <div className="metric">
-            <span>ДРР</span>
-            <strong>{summary.drr}%</strong>
-          </div>
-        </section>
-
         <ChatHome summary={summary} />
-      </section>
+      </div>
     </main>
   );
 }

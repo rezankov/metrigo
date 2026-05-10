@@ -1,3 +1,8 @@
+version: "3.9"
+
+networks:
+  metrigo_net:
+
 services:
   nginx:
     image: nginx:stable
@@ -11,6 +16,8 @@ services:
       - ./certbot/conf:/etc/letsencrypt
     depends_on:
       - api
+    networks:
+      - metrigo_net
     restart: always
 
   api:
@@ -24,6 +31,8 @@ services:
       - clickhouse
     ports:
       - "127.0.0.1:8000:8000"
+    networks:
+      - metrigo_net
     restart: always
 
   worker:
@@ -37,6 +46,8 @@ services:
     depends_on:
       - clickhouse
       - postgres
+    networks:
+      - metrigo_net
     restart: "no"
 
   postgres:
@@ -51,6 +62,8 @@ services:
       - ./db/postgres/init:/docker-entrypoint-initdb.d
     ports:
       - "127.0.0.1:5432:5432"
+    networks:
+      - metrigo_net
     restart: always
 
   web:
@@ -61,6 +74,8 @@ services:
       - .env
     ports:
       - "127.0.0.1:3000:3000"
+    networks:
+      - metrigo_net
     restart: always
 
   clickhouse:
@@ -76,4 +91,6 @@ services:
     ports:
       - "127.0.0.1:8123:8123"
       - "127.0.0.1:9000:9000"
+    networks:
+      - metrigo_net
     restart: always
