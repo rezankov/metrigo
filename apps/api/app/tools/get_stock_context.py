@@ -7,6 +7,21 @@ from app.db import ch
 from typing import List, Dict
 
 def get_stock_context(seller_id: str, limit: int = 5) -> List[Dict]:
+    """
+    Получить товары с остатками и скоростью продаж.
+
+    Возвращает:
+    - SKU
+    - остаток на складе
+    - продажи за период
+    - средние продажи в день
+    - количество дней покрытия
+
+    Используется для:
+    - поиска товаров, которые заканчиваются
+    - анализа остатков
+    - рекомендаций по поставкам
+    """
     client = ch()
     rows = client.query(
         """
@@ -41,11 +56,3 @@ def get_stock_context(seller_id: str, limit: int = 5) -> List[Dict]:
             "days_cover":round(days_cover,1),
         })
     return result
-
-tool_metadata = {
-    "name":"get_stock_context",
-    "description":"Возвращает список SKU с остатками и днями покрытия.",
-    "args":{"seller_id":"str","limit":"int, сколько SKU возвращать, по умолчанию 5"},
-    "return":{"seller_art":"SKU","stock_qty":"остаток","sales_14d":"продажи за 14 дней","avg_sales_per_day":"средние продажи","days_cover":"дней покрытия"},
-    "entrypoint":"get_stock_context"
-}

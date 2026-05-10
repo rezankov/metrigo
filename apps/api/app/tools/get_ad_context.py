@@ -33,23 +33,3 @@ def get_ad_context(seller_id: str, sku: Optional[str] = None, days: int = 14) ->
     ad_spend = rows[0][0] if rows else 0.0
 
     return {"seller_id": seller_id, "sku": sku, "ad_spend": float(ad_spend)}
-
-# Метаданные для ИИ
-tool_metadata = {
-    "name": "get_ad_context",
-    "description": (
-        "Возвращает рекламные расходы (ad_spend) за последние N дней. "
-        "Можно фильтровать по конкретному SKU или получать суммарно по всем."
-    ),
-    "args": {
-        "seller_id": "str, идентификатор продавца",
-        "sku": "str, необязательный, фильтр по SKU",
-        "days": "int, количество дней для суммирования, по умолчанию 14"
-    },
-    "return": {
-        "seller_id": "ID продавца",
-        "sku": "SKU или None",
-        "ad_spend": "суммарные расходы на рекламу за период"
-    },
-    "entrypoint": "get_ad_context"
-}

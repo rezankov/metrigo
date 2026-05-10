@@ -2,23 +2,23 @@
 Metrigo API entrypoint.
 
 - Универсальный: использует build_today_context для агрегаций и контекста
-- Инструменты подключаются из load_tools.TOOLS_DICT
+- Инструменты подключаются из load_tools.TOOLS
 - POST /chat обрабатывает запросы через ChatGPT + инструменты
 - POST /tools/{tool_name} — универсальный вызов инструмента с JSON-аргументами
 """
 
 import os
-import httpx
 import json
 from fastapi import Request, FastAPI
 from pydantic import BaseModel
 from app.build_today_context import build_today_context
-from app.load_tools import TOOLS, TOOLS_DICT as TOOLS
+from app.load_tools import TOOLS
 from app.chat_store import (
     get_or_create_thread,
     save_message,
     get_last_messages,
 )
+from app.agent import run_agent
 
 # --- Конфиги ---
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -38,7 +38,9 @@ class ChatRequest(BaseModel):
 async def chat(request: ChatRequest):
     text = (request.message or "").strip()
 
-    # --- Формируем контекст для ИИ ---
+    if not text:
+        return {"type": "text", "text": "Введите сообщение."}
+
     try:
         context = build_today_context(seller_id=SELLER_ID)
     except Exception as e:
@@ -47,25 +49,13 @@ async def chat(request: ChatRequest):
     if not OPENROUTER_KEY:
         return {"type": "text", "text": "OpenRouter API ключ не задан"}
 
-    # --- Системный промпт для ChatGPT ---
-    tools_description = "\n".join([f"{name}: {func.__doc__ or ''}" for name, func in TOOLS.items()])
-    system_prompt = f"""
-Вы помощник продавца Wildberries. Используйте только предоставленные данные.
-Доступные инструменты для анализа и получения метрик:
-{tools_description}
-
-Бизнес-контекст (build_today_context):
-{json.dumps(context, ensure_ascii=False, indent=2)}
-
-Отвечайте на вопросы пользователя корректно, используя инструменты по мере необходимости.
-Если пользователь укажет конкретный SKU, добавьте его через get_sku_context.
-"""
-
-    # --- Запрос к OpenRouter (ChatGPT) ---
-    # --- Thread ---
     thread_id = get_or_create_thread(SELLER_ID)
 
-    # --- Сохраняем сообщение пользователя ---
+    history = get_last_messages(
+        thread_id=thread_id,
+        limit=20,
+    )
+
     save_message(
         thread_id=thread_id,
         seller_id=SELLER_ID,
@@ -73,64 +63,65 @@ async def chat(request: ChatRequest):
         content=text,
     )
 
-    # --- Последние сообщения ---
-    history = get_last_messages(
-        thread_id=thread_id,
-        limit=20,
+    tools_description = "\n".join(
+        [f"{name}: {func.__doc__ or ''}" for name, func in TOOLS.items()]
     )
 
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt,
-        }
-    ]
+    system_prompt = f"""
+Вы помощник продавца Wildberries. Используйте только предоставленные данные.
 
-    # --- История чата ---
-    for msg in history:
-        if msg["role"] in ("user", "assistant"):
-            messages.append(
+Доступные инструменты:
+{tools_description}
+
+Бизнес-контекст:
+{json.dumps(context, ensure_ascii=False, indent=2)}
+
+Если для ответа нужны дополнительные данные, верни строго одну строку в формате:
+TOOL_CALL: {{"tool":"get_stock_context","args":{{"limit":5}}}}
+
+Правила TOOL_CALL:
+- Не добавляй пояснений рядом с TOOL_CALL.
+- seller_id не указывай, backend добавит его сам.
+- Если данных уже хватает, отвечай обычным Markdown.
+- Не придумывай данные, которых нет в контексте или результате инструмента.
+"""
+
+    try:
+        chat_text = await run_agent(
+            openrouter_key=OPENROUTER_KEY,
+            model=OPENROUTER_MODEL,
+            system_prompt=system_prompt,
+            history_messages=[
                 {
                     "role": msg["role"],
                     "content": msg["content"],
                 }
-            )
+                for msg in history
+                if msg["role"] in ("user", "assistant")
+            ],
+            user_message=text,
+            seller_id=SELLER_ID,
+        )
 
-    payload = {
-        "model": OPENROUTER_MODEL,
-        "messages": messages,
-    }
+        save_message(
+            thread_id=thread_id,
+            seller_id=SELLER_ID,
+            role="assistant",
+            content=chat_text,
+        )
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json"
-    }
+        return {
+            "type": "text",
+            "text": chat_text,
+            "context": context,
+            "available_tools": list(TOOLS.keys()),
+        }
 
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        try:
-            resp = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers=headers,
-                json=payload
-            )
-            resp.raise_for_status()
-            result = resp.json()
-            chat_text = result["choices"][0]["message"]["content"]
-            # --- Сохраняем ответ ИИ ---
-            save_message(
-                thread_id=thread_id,
-                seller_id=SELLER_ID,
-                role="assistant",
-                content=chat_text,
-            )
-            return {
-                "type": "text",
-                "text": chat_text,
-                "context": context,
-                "available_tools": list(TOOLS.keys())
-            }
-        except Exception as e:
-            return {"type": "text", "text": f"Ошибка соединения с ИИ: {str(e)}"}
+    except Exception as e:
+        return {
+            "type": "text",
+            "text": f"Ошибка соединения с ИИ: {str(e)}",
+        }
 
 
 # --- Универсальный вызов любого инструмента ---

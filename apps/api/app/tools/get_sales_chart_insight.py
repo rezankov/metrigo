@@ -9,6 +9,18 @@
 from app.db import ch
 
 def get_sales_chart_insight() -> str:
+    """
+    Проанализировать график продаж за последние 14 дней.
+    Возвращает:
+    - сравнение с предыдущим днем
+    - сравнение со средним уровнем
+    - наличие пиков продаж
+    Используется для:
+    - AI-комментариев к графику
+    - ежедневных инсайтов
+    - кратких аналитических выводов
+    """
+
     client = ch()
     rows = client.query(
         """
@@ -38,11 +50,3 @@ def get_sales_chart_insight() -> str:
     peak_text = "Выраженный пик на графике." if max_value>avg_value*1.6 else "Пиков нет."
 
     return f"**Короткий вывод:**\n\n{level_text}\n{trend_text}\n{peak_text}"
-
-tool_metadata = {
-    "name":"get_sales_chart_insight",
-    "description":"Возвращает текстовый вывод по графику продаж за 14 дней: рост/падение, пиковые значения.",
-    "args":{},
-    "return":"str, текстовый вывод по графику",
-    "entrypoint":"get_sales_chart_insight"
-}

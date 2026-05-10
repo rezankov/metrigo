@@ -87,27 +87,3 @@ def get_summary_today(seller_id: str = SELLER_ID) -> Dict:
         "risks": [],
         "suggested_actions": ["Что сегодня важно?", "Остатки", "Реклама", "Что заказать?"],
     }
-
-
-# --- Метаданные для ИИ ---
-tool_metadata = {
-    "name": "get_summary_today",
-    "description": "Формирует сводный отчёт на сегодня: продажи, выручка, расходы на рекламу, DRR, бизнес-здоровье, текстовое summary.",
-    "args": {"seller_id": "str, идентификатор продавца"},
-    "return": {
-        "seller_id": "ID продавца",
-        "sales_count": "количество продаж сегодня",
-        "orders_count": "количество заказов сегодня",
-        "revenue": "выручка сегодня",
-        "ad_spend": "расход на рекламу сегодня",
-        "drr": "расход на рекламу / выручка * 100",
-        "system_status": "ok/warning/critical",
-        "health_comment": "текст комментария по бизнес-здоровью",
-        "health_details": "подробности по stocks, sales, ads",
-        "priority": "ok/warning",
-        "summary_text": "текстовое summary",
-        "risks": "список потенциальных рисков",
-        "suggested_actions": "рекомендации для действий"
-    },
-    "entrypoint": "get_summary_today"
-}

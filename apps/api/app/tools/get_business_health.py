@@ -75,22 +75,3 @@ def get_business_health(seller_id: str) -> Dict:
         comment = "Есть предупреждения по бизнесу"
 
     return {"status": status, "comment": comment, "details": details}
-
-
-# --- Метаданные для ИИ ---
-tool_metadata = {
-    "name": "get_business_health",
-    "description": (
-        "Возвращает статус бизнеса: продажи, остатки, расходы на рекламу. "
-        "Формирует status (ok/warning/critical), comment и детали по категориям."
-    ),
-    "args": {
-        "seller_id": "str, идентификатор продавца"
-    },
-    "return": {
-        "status": "ok/warning/critical",
-        "comment": "пояснение",
-        "details": "dict: stocks, sales, ads"
-    },
-    "entrypoint": "get_business_health"
-}

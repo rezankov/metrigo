@@ -9,7 +9,7 @@ build_today_context.py — формирует полный контекст дл
 from datetime import date
 from typing import Dict
 from app.db import ch
-from app.load_tools import TOOLS
+from app.load_tools import ALL_TOOLS
 from app.ai_prompts import SYSTEM_PROMPT
 
 
@@ -60,7 +60,7 @@ def build_today_context(seller_id: str) -> Dict:
         "ads": {
             "spend": ad_spend
         },
-        "tools": TOOLS,
+        "tools": ALL_TOOLS,
         "system_prompt": SYSTEM_PROMPT,
     }
 
