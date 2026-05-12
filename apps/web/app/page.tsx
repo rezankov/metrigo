@@ -10,6 +10,7 @@ import {
   SalesMiniChart,
   TodaySummary,
 } from "@/lib/api";
+import Dashboard from "@/components/Dashboard";
 
 function formatRub(value: number) {
   return `${Math.round(value).toLocaleString("ru-RU")} ₽`;
@@ -54,6 +55,7 @@ export default function Page() {
   const [error, setError] = useState(false);
   const [todayMetrics, setTodayMetrics] = useState<HeaderMetrics | null>(null);
   const [sevenDaysMetrics, setSevenDaysMetrics] = useState<HeaderMetrics | null>(null);
+  const [view, setView] = useState<"chat" | "dashboard">("chat");
 
   useEffect(() => {
     Promise.all([
@@ -129,9 +131,24 @@ export default function Page() {
           </section>
 
           <MiniSalesChart chart={salesChart} />
+		  
+          <div className="viewTabs">
+            <button
+              className={view === "chat" ? "active" : ""}
+              onClick={() => setView("chat")}
+            >
+              Чат
+            </button>
+            <button
+              className={view === "dashboard" ? "active" : ""}
+              onClick={() => setView("dashboard")}
+            >
+              Дашборд
+            </button>
+          </div>
         </header>
 
-        <ChatHome summary={summary} />
+        {view === "chat" ? <ChatHome summary={summary} /> : <Dashboard />}
       </div>
     </main>
   );

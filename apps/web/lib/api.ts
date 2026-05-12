@@ -125,3 +125,42 @@ export async function getHeaderMetrics(days = 7): Promise<HeaderMetrics> {
 
   return data.result;
 }
+
+export type DashboardSkuItem = {
+  sku: string;
+  stock_qty: number;
+  sales_14d: number;
+  avg_sales_per_day: number;
+  days_cover: number;
+  current_price: number;
+  margin_percent: number;
+  turnover_30d: number;
+};
+
+export type DashboardSkuList = {
+  seller_id: string;
+  days: number;
+  items: DashboardSkuItem[];
+};
+
+export async function getDashboardSkuList(days = 30): Promise<DashboardSkuList> {
+  const response = await fetch("/api/dashboard/sku_list", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify({
+      seller_id: "main",
+      days,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load dashboard SKU list");
+  }
+
+  const data = await response.json();
+
+  return data.result;
+}

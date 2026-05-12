@@ -337,3 +337,348 @@ button {
 .chips button:disabled {
   opacity: 0.5;
 }
+
+.viewTabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.viewTabs button {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.viewTabs button.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.phone {
+  padding-top: 172px;
+}
+
+.fixedHeader {
+  height: 172px;
+}
+
+.dashboard {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 12px 24px;
+}
+
+.dashboardTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dashboardTitle h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.dashboardTitle p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dashboardTitle > span {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.skuList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skuRow {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 22px;
+  padding: 14px;
+  color: var(--text);
+}
+
+.skuMain {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.skuMain strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.skuMain span {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.skuMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.skuMetrics div {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 9px;
+}
+
+.skuMetrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.skuMetrics strong {
+  display: block;
+  font-size: 14px;
+}
+
+.cover.critical {
+  color: #dc2626;
+}
+
+.cover.warning {
+  color: #d97706;
+}
+
+.cover.ok {
+  color: var(--green);
+}
+
+.skuStatus {
+  display: inline-flex;
+  margin-top: 10px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.skuStatus.critical {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.skuStatus.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.skuStatus.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.fixedHeader {
+  height: 180px;
+  padding-bottom: 12px;
+}
+
+.phone {
+  padding-top: 180px;
+}
+
+.viewTabs {
+  margin-top: 7px;
+  margin-bottom: 7px;
+}
+
+.dashboardTitle.compact {
+  margin-bottom: 8px;
+}
+
+.dashboardTitle.compact h1 {
+  font-size: 22px;
+}
+
+.sortTabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sortTabs button {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.sortTabs button.active {
+  background: #c0c6c9;  /* серый фон */
+  color: #ffffff;        /* текст остаётся белым */
+  border-color: #aabbcc; /* рамка совпадает с фоном */
+}
+
+.skuList.compact {
+  gap: 7px;
+}
+
+.skuRow.compact {
+  padding: 10px 12px;
+  border-radius: 18px;
+}
+
+.skuRow.compact .skuMain {
+  margin-bottom: 8px;
+}
+
+.skuMain > div {
+  min-width: 0;
+}
+
+.skuMargin {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.skuMetrics.compact div {
+  padding: 7px 8px;
+  border-radius: 12px;
+}
+
+.skuMetrics.compact span {
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+
+.skuMetrics.compact strong {
+  font-size: 13px;
+}
+
+.skuStatus {
+  display: none;
+}
+
+/* --- Компактные карточки SKU --- */
+.skuList.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skuRow.compact {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.skuMain {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.skuMain > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.skuMain strong {
+  font-size: 14px;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skuMargin {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.skuMain span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.skuMetrics.compact {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.skuMetrics.compact div {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 6px 8px;
+}
+
+.skuMetrics.compact span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.skuMetrics.compact strong {
+  font-size: 13px;
+  display: block;
+  line-height: 1.1;
+}
+
+/* Цветовое кодирование дней покрытия */
+.cover.critical {
+  color: #dc2626; /* красный */
+  font-weight: 600;
+}
+
+.cover.warning {
+  color: #d97706; /* оранжевый */
+  font-weight: 600;
+}
+
+.cover.ok {
+  color: var(--green); /* зеленый */
+  font-weight: 600;
+}
+
+/* Скрываем текстовые статусы */
+.skuStatus {
+  display: none;
+}

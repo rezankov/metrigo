@@ -20,6 +20,7 @@ from app.chat_store import (
 )
 from app.agent import run_agent
 from app.business_context import BUSINESS_CONTEXT
+from app.dashboard.sku_list import get_sku_list
 
 # --- Конфиги ---
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -326,4 +327,26 @@ async def chat_history(
 
     return {
         "messages": messages
+    }
+
+
+@app.post("/dashboard/sku_list")
+async def dashboard_sku_list(request: Request):
+    """
+    Dashboard:
+    список SKU с остатками и оборотом.
+    """
+
+    body = await request.json()
+
+    seller_id = body.get("seller_id", SELLER_ID)
+    days = int(body.get("days", 30))
+
+    result = get_sku_list(
+        seller_id=seller_id,
+        days=days,
+    )
+
+    return {
+        "result": result
     }
