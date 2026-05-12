@@ -3,23 +3,28 @@ agent.py — AI-agent loop для Metrigo.
 
 Логика:
 1. Отправляем ИИ контекст, историю и вопрос.
-2. ИИ может запросить инструмент через TOOL_CALL.
+2. ИИ может запросить TOOL_CALL.
 3. Backend выполняет инструмент.
-4. Результат инструмента отправляется ИИ.
-5. ИИ формирует финальный ответ.
+4. Результат инструмента возвращается ИИ.
+5. ИИ может запросить следующий TOOL_CALL.
+6. После завершения возвращается финальный ответ.
 """
 
 import json
 import httpx
+
 from app.tool_runner import parse_tool_call, run_tool
 from app.tool_log import save_tool_call
+
+
+MAX_TOOL_STEPS = 5
 
 
 async def ask_llm(
     openrouter_key: str,
     model: str,
     messages: list[dict],
-    timeout: float = 30.0,
+    timeout: float = 60.0,
 ) -> str:
     """
     Отправить messages в OpenRouter и вернуть текст ответа.
@@ -58,9 +63,7 @@ async def run_agent(
     seller_id: str,
 ) -> str:
     """
-    Выполнить один цикл общения с ИИ.
-
-    Пока поддерживаем максимум 1 tool call за запрос.
+    Запустить AI-agent loop с поддержкой нескольких TOOL_CALL.
     """
 
     messages = [
@@ -79,57 +82,70 @@ async def run_agent(
         }
     )
 
-    first_answer = await ask_llm(
-        openrouter_key=openrouter_key,
-        model=model,
-        messages=messages,
+    for step in range(MAX_TOOL_STEPS):
+
+        answer = await ask_llm(
+            openrouter_key=openrouter_key,
+            model=model,
+            messages=messages,
+        )
+
+        tool_call = parse_tool_call(answer)
+
+        # Если TOOL_CALL нет — это финальный ответ.
+        if not tool_call:
+            return answer
+
+        tool_name = tool_call["tool"]
+        args = tool_call.get("args", {})
+
+        # seller_id всегда контролирует backend.
+        args["seller_id"] = seller_id
+
+        try:
+            tool_result = run_tool(
+                tool_name=tool_name,
+                args=args,
+            )
+
+            save_tool_call(
+                seller_id=seller_id,
+                tool_name=tool_name,
+                args=args,
+                result=tool_result,
+            )
+
+        except Exception as e:
+            tool_result = {
+                "error": str(e)
+            }
+
+        # Сохраняем TOOL_CALL как assistant message
+        messages.append(
+            {
+                "role": "assistant",
+                "content": answer,
+            }
+        )
+
+        # Возвращаем результат инструмента модели
+        messages.append(
+            {
+                "role": "user",
+                "content": (
+                    f"Результат инструмента {tool_name}:\n\n"
+                    f"{json.dumps(tool_result, ensure_ascii=False, indent=2)}\n\n"
+                    "Теперь:"
+                    "\n- либо дай следующий TOOL_CALL"
+                    "\n- либо дай финальный ответ пользователю"
+                    "\n- TOOL_CALL не объясняй"
+                    "\n- TOOL_CALL должен быть строго одной строкой"
+                    "\n- финальный ответ пиши Markdown"
+                ),
+            }
+        )
+
+    return (
+        "Не удалось завершить цепочку инструментов. "
+        "Попробуйте переформулировать запрос."
     )
-
-    tool_call = parse_tool_call(first_answer)
-
-    if not tool_call:
-        return first_answer
-
-    args = tool_call["args"]
-
-    # seller_id всегда контролирует backend, а не ИИ.
-    args["seller_id"] = seller_id
-
-    tool_result = run_tool(
-        tool_name=tool_call["tool"],
-        args=args,
-    )
-
-    save_tool_call(
-        seller_id=seller_id,
-        tool_name=tool_call["tool"],
-        args=args,
-        result=tool_result,
-    )
-
-    messages.append(
-        {
-            "role": "assistant",
-            "content": first_answer,
-        }
-    )
-
-    messages.append(
-        {
-            "role": "user",
-            "content": (
-                "Результат инструмента:\n"
-                f"{json.dumps(tool_result, ensure_ascii=False, indent=2)}\n\n"
-                "Теперь дай финальный ответ пользователю. "
-                "Не показывай TOOL_CALL. Ответь обычным Markdown."
-            ),
-        }
-    )
-
-    final_answer = await ask_llm(
-        openrouter_key=openrouter_key,
-        model=model,
-        messages=messages,
-    )
-
-    return final_answer

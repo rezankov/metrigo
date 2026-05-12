@@ -48,7 +48,7 @@ button {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding-top: 120px;
+  padding-top: 132px;
 }
 
 .fixedHeader {
@@ -58,7 +58,7 @@ button {
   transform: translateX(-50%);
   z-index: 60;
   width: min(430px, 100vw);
-  height: 120px;
+  height: 132px;
   padding: 10px 12px 8px;
   background: rgba(246, 248, 251, 0.96);
   backdrop-filter: blur(18px);
@@ -67,9 +67,9 @@ button {
 }
 
 .headerTop {
-  height: 48px;
+  height: 52px;
   display: grid;
-  grid-template-columns: 1.05fr 1.2fr 1.2fr 26px;
+  grid-template-columns: 48px 1fr 1fr 28px;
   gap: 8px;
   align-items: center;
 }
@@ -82,16 +82,24 @@ button {
 }
 
 .logoImage {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
+  max-width: 44px;
+  max-height: 44px;
   flex-shrink: 0;
-  border-radius: 12px;
-  object-fit: cover;
+  border-radius: 14px;
+  object-fit: contain;
+  display: block;
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+}
+
+.logoOnly {
+  justify-content: center;
 }
 
 .brandText {
   min-width: 0;
+  overflow: hidden;
 }
 
 .logo {
@@ -100,6 +108,7 @@ button {
   letter-spacing: -0.055em;
   line-height: 1;
   color: #111827;
+  white-space: nowrap;
 }
 
 .subtitle {
@@ -115,7 +124,6 @@ button {
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 8px 10px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
 }
 
 .headerMetric span {
@@ -150,6 +158,14 @@ button {
   cursor: help;
 }
 
+.miniChartEmpty {
+  width: 100%;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  align-self: center;
+}
+
 .miniChartCard {
   height: 60px;
   margin-top: 8px;
@@ -158,17 +174,21 @@ button {
   border-radius: 18px;
   display: flex;
   align-items: end;
-  gap: 5px;
+  gap: 2px;
   padding: 10px 12px;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .miniBar {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
-  border-radius: 5px 5px 2px 2px;
+  max-width: 100%;
+  border-radius: 4px 4px 2px 2px;
   background: linear-gradient(180deg, #93c5fd, #bfdbfe);
-  border: 2px solid var(--blue);
+  border: 1px solid var(--blue);
 }
 
 .chat {
@@ -178,23 +198,25 @@ button {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px 12px 170px;
+  padding: 14px 12px 160px;
   scroll-behavior: smooth;
+  background: transparent;
 }
 
 .message {
-  max-width: 94%;
-  border-radius: 28px;
-  padding: 18px 20px;
+  position: relative;
+  max-width: 88%;
+  border-radius: 24px;
+  padding: 16px 18px 30px;
   line-height: 1.5;
-  font-size: 17px;
+  font-size: 16px;
+  word-break: break-word;
 }
 
 .message.ai {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--border);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
 }
 
 .message.user {
@@ -204,7 +226,6 @@ button {
 
 .message p {
   margin: 0 0 10px;
-  line-height: 1.5;
 }
 
 .message p:last-child {
@@ -224,30 +245,47 @@ button {
   margin-bottom: 6px;
 }
 
+.messageTime {
+  position: absolute;
+  right: 16px;
+  bottom: 9px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1;
+}
+
 .loading {
   opacity: 0.7;
+}
+
+.historyLoader {
+  align-self: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 12px;
 }
 
 .chips {
   position: fixed;
   left: 50%;
-  bottom: 96px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  z-index: 30;
+  z-index: 40;
   width: min(430px, 100vw);
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 0 12px;
+  padding: 0 12px 6px;
 }
 
 .chips button {
   white-space: nowrap;
   border: 1px solid #dfe6f2;
-  background: #eef2ff;
-  border-radius: 18px;
-  padding: 12px 18px;
-  color: #51628f;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
 }
 
 .inputBar {
@@ -255,7 +293,7 @@ button {
   left: 50%;
   bottom: calc(12px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  z-index: 30;
+  z-index: 45;
   width: calc(min(430px, 100vw) - 24px);
   display: flex;
   gap: 8px;
@@ -263,7 +301,6 @@ button {
   border: 1px solid var(--border);
   border-radius: 26px;
   padding: 7px;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
 }
 
 .inputBar input {
@@ -291,30 +328,12 @@ button {
   color: white;
   font-weight: 800;
   font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .inputBar button:disabled,
 .chips button:disabled {
   opacity: 0.5;
-}
-
-.historyLoader {
-  align-self: center;
-  color: var(--muted);
-  font-size: 13px;
-  padding: 8px 12px;
-}
-
-.message {
-  position: relative;
-  padding-bottom: 28px;
-}
-
-.messageTime {
-  position: absolute;
-  right: 16px;
-  bottom: 9px;
-  font-size: 11px;
-  color: #94a3b8;
-  line-height: 1;
 }

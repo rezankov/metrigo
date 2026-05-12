@@ -2,35 +2,72 @@
 
 import { useEffect, useState } from "react";
 import { ChatHome } from "@/components/ChatHome";
-import { getTodaySummary, TodaySummary } from "@/lib/api";
+import {
+  getHeaderMetrics,
+  getSalesMiniChart,
+  getTodaySummary,
+  HeaderMetrics,
+  SalesMiniChart,
+  TodaySummary,
+} from "@/lib/api";
 
 function formatRub(value: number) {
   return `${Math.round(value).toLocaleString("ru-RU")} ₽`;
 }
 
-function MiniSalesChart() {
-  const bars = [42, 48, 38, 50, 56, 64, 58, 46, 68, 62, 70, 64, 66, 72, 78];
+function MiniSalesChart({ chart }: { chart: SalesMiniChart | null }) {
+  if (!chart || chart.values.length === 0) {
+    return (
+      <section className="miniChartCard">
+        <div className="miniChartEmpty">Нет данных</div>
+      </section>
+    );
+  }
+
+  const maxValue = chart.max_value || Math.max(...chart.values, 1);
 
   return (
     <section className="miniChartCard">
-      {bars.map((height, index) => (
-        <div
-          key={index}
-          className="miniBar"
-          style={{ height: `${height}%` }}
-        />
-      ))}
+      {chart.values.map((value, index) => {
+        const height = maxValue > 0 ? Math.max(4, (value / maxValue) * 100) : 4;
+
+        return (
+          <div
+            key={`${chart.labels[index]}-${index}`}
+            className="miniBar"
+            title={`${chart.labels[index]}: ${Math.round(value).toLocaleString("ru-RU")} ₽`}
+            style={{ height: `${height}%` }}
+          />
+        );
+      })}
     </section>
   );
 }
 
+function formatCompactRub(value: number) {
+  return `${Math.round(value).toLocaleString("ru-RU")} ₽`;
+}
+
 export default function Page() {
   const [summary, setSummary] = useState<TodaySummary | null>(null);
+  const [salesChart, setSalesChart] = useState<SalesMiniChart | null>(null);
   const [error, setError] = useState(false);
+  const [todayMetrics, setTodayMetrics] = useState<HeaderMetrics | null>(null);
+  const [sevenDaysMetrics, setSevenDaysMetrics] = useState<HeaderMetrics | null>(null);
 
   useEffect(() => {
-    getTodaySummary()
-      .then(setSummary)
+    Promise.all([
+      getTodaySummary(),
+      getSalesMiniChart(60),
+      getHeaderMetrics(1),
+      getHeaderMetrics(7),
+    ])
+      .then(([summaryData, chartData, todayData, sevenDaysData]) => {
+        setSummary(summaryData);
+        setSalesChart(chartData);
+        setTodayMetrics(todayData);
+        setSevenDaysMetrics(sevenDaysData);
+      })
       .catch(() => setError(true));
   }, []);
 
@@ -63,32 +100,25 @@ export default function Page() {
       <div className="phone">
         <header className="fixedHeader">
           <section className="headerTop">
-            <div className="brand">
-              <img
-                src="/logo.svg"
-                alt="Metrigo"
-                className="logoImage"
-              />
-
-              <div className="brandText">
-                <div className="logo">Metrigo</div>
-                <div className="subtitle">AI-кабинет WB</div>
-              </div>
+            <div className="brand logoOnly">
+              <img src="/apple-touch-icon.png" alt="Metrigo" className="logoImage" />
             </div>
 
             <div className="headerMetric">
               <span>Сегодня</span>
               <strong>
-                {summary.sales_count} / {summary.orders_count} /{" "}
-                {formatRub(summary.revenue)}
+                {todayMetrics
+                  ? `${todayMetrics.orders_count} / ${todayMetrics.buyouts_count} / ${formatRub(todayMetrics.revenue)}`
+                  : "—"}
               </strong>
             </div>
 
             <div className="headerMetric green">
               <span>7 дней</span>
               <strong>
-                {summary.sales_count} / {summary.orders_count} /{" "}
-                {formatRub(summary.revenue)}
+                {sevenDaysMetrics
+                  ? `${sevenDaysMetrics.orders_count} / ${sevenDaysMetrics.buyouts_count} / ${formatCompactRub(sevenDaysMetrics.revenue)}`
+                  : "—"}
               </strong>
             </div>
 
@@ -98,7 +128,7 @@ export default function Page() {
             />
           </section>
 
-          <MiniSalesChart />
+          <MiniSalesChart chart={salesChart} />
         </header>
 
         <ChatHome summary={summary} />

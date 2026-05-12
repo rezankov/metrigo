@@ -64,3 +64,64 @@ export async function getChatHistory(
 
   return data.messages || [];
 }
+
+export type SalesMiniChart = {
+  labels: string[];
+  values: number[];
+  max_value: number;
+  days: number;
+};
+
+export async function getSalesMiniChart(days = 60): Promise<SalesMiniChart> {
+  const response = await fetch("/api/tools/get_sales_mini_chart", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify({
+      seller_id: "main",
+      days,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load sales mini chart");
+  }
+
+  const data = await response.json();
+
+  return data.result;
+}
+
+export type HeaderMetrics = {
+  seller_id: string;
+  days: number;
+  orders_count: number;
+  buyouts_count: number;
+  revenue: number;
+  tax: number;
+  revenue_after_tax: number;
+};
+
+export async function getHeaderMetrics(days = 7): Promise<HeaderMetrics> {
+  const response = await fetch("/api/tools/get_header_metrics", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify({
+      seller_id: "main",
+      days,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load header metrics");
+  }
+
+  const data = await response.json();
+
+  return data.result;
+}
