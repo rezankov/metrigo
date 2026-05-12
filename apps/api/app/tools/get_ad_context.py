@@ -21,7 +21,7 @@ def get_ad_context(seller_id: str, sku: Optional[str] = None, days: int = 14) ->
         SELECT round(sum(spend), 2) AS ad_spend
         FROM metrigo.fact_ads_stats_daily
         WHERE seller_id = %(seller_id)s
-          AND stat_date >= today() - %(days)s
+          AND stat_date >= toDate(now('Europe/Moscow')) - %(days)s
     """
     params = {"seller_id": seller_id, "days": days}
 

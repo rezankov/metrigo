@@ -29,7 +29,7 @@ def get_sku_context(seller_id: str, sku: str, days: int = 14) -> Dict:
             SELECT seller_art, countIf(op='S') / %(days)s AS avg_sales_per_day
             FROM metrigo.fact_sales
             WHERE seller_id=%(seller_id)s
-              AND sale_date >= today() - %(days)s
+              AND sale_date >= toDate(now('Europe/Moscow')) - %(days)s
               AND seller_art = %(sku)s
             GROUP BY seller_art
         )
@@ -56,7 +56,7 @@ def get_sku_context(seller_id: str, sku: str, days: int = 14) -> Dict:
         SELECT countIf(op='S') AS sales_count
         FROM metrigo.fact_sales
         WHERE seller_id=%(seller_id)s
-          AND sale_date >= today() - %(days)s
+          AND sale_date >= toDate(now('Europe/Moscow')) - %(days)s
           AND seller_art = %(sku)s
         """,
         {"seller_id": seller_id, "sku": sku, "days": days},
@@ -70,7 +70,7 @@ def get_sku_context(seller_id: str, sku: str, days: int = 14) -> Dict:
         FROM metrigo.fact_ads_stats_daily
         WHERE seller_id = %(seller_id)s
           AND JSONExtractString(payload, 'seller_art') = %(sku)s
-          AND stat_date >= today() - %(days)s
+          AND stat_date >= toDate(now('Europe/Moscow')) - %(days)s
         """,
         {"seller_id": seller_id, "sku": sku, "days": days},
     ).result_rows

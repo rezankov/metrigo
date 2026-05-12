@@ -2,8 +2,9 @@
 get_sales_mini_chart.py — мини-график продаж для шапки Metrigo.
 """
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Dict, List
+
 from app.db import ch
 
 
@@ -11,22 +12,23 @@ def get_sales_mini_chart(seller_id: str, days: int = 60) -> Dict:
     """
     Получить продажи по дням для мини-графика.
 
-    Возвращает:
-    - labels: даты
-    - values: выручка по дням
-    - max_value: максимум периода
-    - days: количество дней
-
-    Используется для:
-    - верхнего мини-графика в интерфейсе
-    - быстрой визуальной оценки динамики продаж
+    Бизнес-день считаем по Europe/Moscow.
     """
 
     client = ch()
-
     days = max(1, min(int(days or 60), 120))
-    today = date.today()
-    start_date = today - timedelta(days=days - 1)
+
+    date_row = client.query(
+        """
+        SELECT
+            toDate(now('Europe/Moscow')) AS today,
+            today - %(days)s + 1 AS start_date
+        """,
+        {"days": days},
+    ).result_rows[0]
+
+    today = date_row[0]
+    start_date = date_row[1]
 
     rows = client.query(
         """
@@ -42,8 +44,8 @@ def get_sales_mini_chart(seller_id: str, days: int = 60) -> Dict:
         """,
         {
             "seller_id": seller_id,
-            "start_date": start_date.isoformat(),
-            "today": today.isoformat(),
+            "start_date": start_date,
+            "today": today,
         },
     ).result_rows
 
@@ -62,11 +64,9 @@ def get_sales_mini_chart(seller_id: str, days: int = 60) -> Dict:
         labels.append(key)
         values.append(revenue_by_date.get(key, 0.0))
 
-    max_value = max(values) if values else 0.0
-
     return {
         "labels": labels,
         "values": values,
-        "max_value": max_value,
+        "max_value": max(values) if values else 0.0,
         "days": days,
     }

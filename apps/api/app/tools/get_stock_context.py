@@ -29,7 +29,7 @@ def get_stock_context(seller_id: str, limit: int = 5) -> List[Dict]:
             SELECT seller_art, countIf(op='S') AS sales_14d, countIf(op='S')/14.0 AS avg_sales_per_day
             FROM metrigo.fact_sales
             WHERE seller_id=%(seller_id)s
-              AND sale_date >= today()-14
+              AND sale_date >= toDate(now('Europe/Moscow'))-14
             GROUP BY seller_art
         )
         SELECT s.seller_art, sum(s.qty) AS stock_qty,

@@ -26,7 +26,7 @@ def get_business_health(seller_id: str) -> Dict:
             sumIf(seller_price, op='S') AS revenue
         FROM metrigo.fact_sales
         WHERE seller_id=%(seller_id)s
-          AND sale_date = today()
+          AND sale_date = toDate(now('Europe/Moscow'))
         """,
         {"seller_id": seller_id},
     ).result_rows
@@ -39,7 +39,7 @@ def get_business_health(seller_id: str) -> Dict:
         SELECT round(sum(spend),2) AS ad_spend
         FROM metrigo.fact_ads_stats_daily
         WHERE seller_id=%(seller_id)s
-          AND stat_date = today()
+          AND stat_date = toDate(now('Europe/Moscow'))
         """,
         {"seller_id": seller_id},
     ).result_rows

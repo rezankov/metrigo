@@ -27,7 +27,7 @@ def get_sales_chart_insight() -> str:
         SELECT sale_date, round(sumIf(seller_price, op='S'),2) AS revenue
         FROM metrigo.fact_sales
         WHERE seller_id='main'
-          AND sale_date >= today()-13
+          AND sale_date >= toDate(now('Europe/Moscow'))-13
         GROUP BY sale_date
         ORDER BY sale_date
         """,

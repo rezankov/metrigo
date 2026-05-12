@@ -137,19 +137,27 @@ def get_ai_business_insights(
     chart = snapshot.get("sales_chart") or {}
     values = chart.get("values") or []
 
-    if len(values) >= 7:
-        last_day = float(values[-1] or 0)
-        previous_values = [float(value or 0) for value in values[:-1]]
+    # Последнее значение графика — текущий незавершённый день.
+    # Его нельзя сравнивать с полными прошлыми днями.
+    analysis_values = values[:-1]
+
+    if len(analysis_values) >= 7:
+        last_completed_day = float(analysis_values[-1] or 0)
+        previous_values = [
+            float(value or 0)
+            for value in analysis_values[:-1]
+        ]
+
         avg = sum(previous_values) / max(1, len(previous_values))
 
-        if avg > 0 and last_day < avg * 0.5:
+        if avg > 0 and last_completed_day < avg * 0.5:
             warnings.append(
-                "Последний день продаж заметно ниже среднего."
+                "Последний завершённый день продаж заметно ниже среднего."
             )
 
-        elif avg > 0 and last_day > avg * 1.5:
+        elif avg > 0 and last_completed_day > avg * 1.5:
             insights.append(
-                "Последний день продаж заметно выше среднего."
+                "Последний завершённый день продаж заметно выше среднего."
             )
 
     return {
