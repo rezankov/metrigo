@@ -78,5 +78,5 @@ def build_today_context(seller_id: str) -> Dict:
             "spend": ad_spend,
         },
         "tools": ALL_TOOLS,
-        "system_prompt": SYSTEM_PROMPT,
+        "system_prompt": "Runtime prompt формируется в main.py",
     }
