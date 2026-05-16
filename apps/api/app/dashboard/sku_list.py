@@ -1,18 +1,10 @@
 """
-sku_list.py — список SKU для dashboard Metrigo.
+sku_list.py — список SKU для dashboard.
 
-Возвращает:
-- SKU
-- остатки
-- продажи
-- дни покрытия
-- текущую цену
-- маржинальность
-- оборот за период
+Источник:
+- agg_sku_snapshot — готовые SKU-метрики
+- fact_orders / fact_sales — заказы и выкупы за вчера
 """
-
-from datetime import date, timedelta
-from typing import Dict, List
 
 from app.db import ch
 
@@ -20,109 +12,143 @@ from app.db import ch
 def get_sku_list(
     seller_id: str,
     days: int = 30,
-) -> Dict:
-    """
-    Получить dashboard-список SKU.
-    """
-
+    limit: int = 100,
+):
     client = ch()
-
-    days = max(1, min(int(days or 30), 120))
-    start_date = (date.today() - timedelta(days=days)).isoformat()
 
     rows = client.query(
         """
-        WITH sales AS (
+        WITH
+
+        latest_snapshot_date AS (
+            SELECT max(snapshot_date) AS snapshot_date
+            FROM metrigo.agg_sku_snapshot
+            WHERE seller_id = %(seller_id)s
+        ),
+
+        snapshot AS (
             SELECT
                 seller_id,
-                seller_art,
-                round(sumIf(seller_price, op='S'), 2) AS turnover,
-                countIf(op='S') AS sales_count,
-                round(toFloat64(countIf(op='S')) / 14, 2) AS avg_sales_per_day
+                sku,
+                snapshot_date,
+                sales_7d,
+                orders_7d,
+                buyouts_7d,
+                revenue_7d,
+                revenue_30d,
+                avg_price,
+                stock_qty,
+                stock_qty_full,
+                coverage_days,
+                cogs,
+                commission,
+                acquiring,
+                logistics,
+                tax,
+                profit_per_unit,
+                margin_percent
+            FROM metrigo.agg_sku_snapshot
+            WHERE seller_id = %(seller_id)s
+              AND snapshot_date = (
+                  SELECT snapshot_date
+                  FROM latest_snapshot_date
+              )
+        ),
+
+        orders_yesterday AS (
+            SELECT
+                seller_id,
+                supplier_article AS sku,
+                countIf(is_cancel = 0) AS orders_yesterday
+            FROM metrigo.fact_orders
+            WHERE seller_id = %(seller_id)s
+              AND toDate(date_time) = today() - 1
+              AND supplier_article != ''
+            GROUP BY seller_id, supplier_article
+        ),
+
+        buyouts_yesterday AS (
+            SELECT
+                seller_id,
+                seller_art AS sku,
+                countIf(op = 'S') AS buyouts_yesterday
             FROM metrigo.fact_sales
             WHERE seller_id = %(seller_id)s
-              AND sale_date >= today() - 14
-            GROUP BY seller_id, seller_art
-        ),
-
-        stocks AS (
-            SELECT
-                seller_id,
-                seller_art,
-                sum(qty) AS stock_qty
-            FROM metrigo.mart_stocks_latest
-            WHERE seller_id = %(seller_id)s
-            GROUP BY seller_id, seller_art
-        ),
-
-        prices AS (
-            SELECT
-                seller_id,
-                seller_art,
-                round(avg(seller_price), 2) AS current_price
-            FROM metrigo.fact_sales
-            WHERE seller_id = %(seller_id)s
-              AND sale_date >= %(start_date)s
-              AND op = 'S'
-            GROUP BY seller_id, seller_art
-        ),
-
-        cogs AS (
-            SELECT
-                seller_id,
-                seller_art,
-                round(avg(cost_per_unit), 2) AS cost_per_unit
-            FROM metrigo.dim_cogs
-            WHERE seller_id = %(seller_id)s
-              AND is_active = 1
+              AND sale_date = today() - 1
+              AND seller_art != ''
             GROUP BY seller_id, seller_art
         )
 
         SELECT
-            s.seller_art AS sku,
-            toInt32(ifNull(st.stock_qty, 0)) AS stock_qty,
-            toInt32(ifNull(s.sales_count, 0)) AS sales_14d,
-            round(ifNull(s.avg_sales_per_day, 0), 2) AS avg_sales_per_day,
-            round(if(s.avg_sales_per_day > 0, st.stock_qty / s.avg_sales_per_day, 0), 1) AS days_cover,
-            round(ifNull(p.current_price, 0), 2) AS current_price,
-            round(if(p.current_price > 0, ((p.current_price - ifNull(c.cost_per_unit, 0)) / p.current_price) * 100, 0), 2) AS margin_percent,
-            round(ifNull(s.turnover, 0), 2) AS turnover_30d
-        FROM sales s
-        LEFT JOIN stocks st
-            ON s.seller_id = st.seller_id
-           AND s.seller_art = st.seller_art
-        LEFT JOIN prices p
-            ON s.seller_id = p.seller_id
-           AND s.seller_art = p.seller_art
-        LEFT JOIN cogs c
-            ON s.seller_id = c.seller_id
-           AND s.seller_art = c.seller_art
-        ORDER BY turnover_30d DESC
+            s.sku,
+
+            round(ifNull(s.avg_price, 0), 2) AS avg_price,
+            round(ifNull(s.margin_percent, 0), 2) AS margin_percent,
+            round(ifNull(s.profit_per_unit, 0), 2) AS profit_per_unit,
+            round(ifNull(s.revenue_30d, 0), 2) AS revenue,
+
+            toUInt32(ifNull(s.stock_qty, 0)) AS stock_qty,
+            toUInt32(ifNull(s.stock_qty_full, 0)) AS stock_qty_full,
+
+            toUInt32(ifNull(oy.orders_yesterday, 0)) AS orders_24h,
+            toUInt32(ifNull(by.buyouts_yesterday, 0)) AS buyouts_24h,
+
+            toUInt32(ifNull(s.orders_7d, 0)) AS orders_7d,
+            toUInt32(ifNull(s.buyouts_7d, 0)) AS buyouts_7d,
+
+            round(ifNull(s.coverage_days, 0), 1) AS coverage_days,
+
+            round(ifNull(s.cogs, 0), 2) AS cogs,
+            round(ifNull(s.commission, 0), 2) AS commission,
+            round(ifNull(s.acquiring, 0), 2) AS acquiring,
+            round(ifNull(s.logistics, 0), 2) AS logistics,
+            round(ifNull(s.tax, 0), 2) AS tax
+
+        FROM snapshot s
+
+        LEFT JOIN orders_yesterday oy
+            ON s.seller_id = oy.seller_id
+           AND s.sku = oy.sku
+
+        LEFT JOIN buyouts_yesterday by
+            ON s.seller_id = by.seller_id
+           AND s.sku = by.sku
+
+        ORDER BY revenue DESC
+        LIMIT %(limit)s
         """,
         {
             "seller_id": seller_id,
-            "start_date": start_date,
+            "limit": limit,
         },
     ).result_rows
 
-    items: List[Dict] = []
+    return [
+        {
+            "sku": row[0],
+            "avg_price": float(row[1] or 0),
+            "margin_percent": float(row[2] or 0),
+            "profit_per_unit": float(row[3] or 0),
+            "revenue": float(row[4] or 0),
+            "stock_qty": int(row[5] or 0),
+            "stock_qty_full": int(row[6] or 0),
+            "orders_24h": int(row[7] or 0),
+            "buyouts_24h": int(row[8] or 0),
+            "orders_7d": int(row[9] or 0),
+            "buyouts_7d": int(row[10] or 0),
+            "coverage_days": float(row[11] or 0),
 
-    for row in rows:
-        items.append(
-            {
-                "sku": row[0],
-                "stock_qty": row[1],
-                "sales_14d": row[2],
-                "avg_sales_per_day": row[3],
-                "days_cover": row[4],
-                "current_price": row[5],
-                "margin_percent": row[6],
-                "turnover_30d": row[7],
-            }
-        )
+            # Для совместимости со старым фронтом.
+            "current_price": float(row[1] or 0),
+            "turnover_30d": float(row[4] or 0),
+            "days_cover": float(row[11] or 0),
 
-    return {
-        "seller_id": seller_id,
-        "days": days,
-        "items": items,
-    }
+            # Новая чистая юнит-экономика.
+            "cogs": float(row[12] or 0),
+            "commission": float(row[13] or 0),
+            "acquiring": float(row[14] or 0),
+            "logistics": float(row[15] or 0),
+            "tax": float(row[16] or 0),
+        }
+        for row in rows
+    ]

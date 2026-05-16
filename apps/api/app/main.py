@@ -21,6 +21,9 @@ from app.chat_store import (
 from app.agent import run_agent
 from app.business_context import BUSINESS_CONTEXT
 from app.dashboard.sku_list import get_sku_list
+from app.dashboard.sku_detail import get_sku_detail
+from app.dashboard.shop_profit import get_shop_profit
+from app.dashboard import monthly_profit
 
 # --- Конфиги ---
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -29,6 +32,7 @@ SELLER_ID = os.getenv("DEFAULT_SELLER_ID", "main").strip() or "main"
 
 app = FastAPI(title="Metrigo API")
 
+app.include_router(monthly_profit.router, prefix="/dashboard")
 
 # --- Модель запроса чата ---
 class ChatRequest(BaseModel):
@@ -349,4 +353,33 @@ async def dashboard_sku_list(request: Request):
 
     return {
         "result": result
+    }
+
+
+@app.post("/dashboard/shop_profit")
+async def dashboard_shop_profit(payload: dict):
+    seller_id = payload.get("seller_id") or DEFAULT_SELLER_ID
+
+    return {
+        "result": get_shop_profit(seller_id=seller_id)
+    }
+
+
+@app.post("/dashboard/sku_detail")
+async def dashboard_sku_detail(request: Request):
+    body = await request.json()
+
+    seller_id = body.get("seller_id", SELLER_ID)
+    sku = body.get("sku")
+    days = int(body.get("days", 30))
+
+    if not sku:
+        return {"error": "sku is required"}
+
+    return {
+        "result": get_sku_detail(
+            seller_id=seller_id,
+            sku=sku,
+            days=days,
+        )
     }

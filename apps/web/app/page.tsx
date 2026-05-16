@@ -76,9 +76,9 @@ export default function Page() {
   if (error) {
     return (
       <main className="page">
-        <div className="phone">
-          <div className="message ai">
-            <p>Ошибка загрузки данных.</p>
+        <div className="fullscreenLoader">
+          <div className="loaderCard">
+            <span>Ошибка загрузки данных.</span>
           </div>
         </div>
       </main>
@@ -88,9 +88,10 @@ export default function Page() {
   if (!summary) {
     return (
       <main className="page">
-        <div className="phone">
-          <div className="message ai">
-            <p>Загрузка Metrigo…</p>
+        <div className="fullscreenLoader">
+          <div className="loaderCard">
+            <div className="loaderDot" />
+            <span>Загрузка Metrigo…</span>
           </div>
         </div>
       </main>
